@@ -1,5 +1,8 @@
 ﻿namespace WaveletAnomalyDetection
 {
+    /// <summary>
+    /// Результат применения детектора аномалий для выборки данных.
+    /// </summary>
     public class AnomalyDetectionResult
     {
         public AnomalyDetectionResultType Type { get; set; }

@@ -9,7 +9,7 @@ namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorith
     {
         public string Name
         {
-            get => "Критерий Кохрана-Кокса (средние значения)";
+            get => "Критерий Кохрана-Кокса (среднее значение)";
         }
 
         private const double _anomalySignificanceLevel = 0.001;
@@ -54,12 +54,12 @@ namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorith
 
             statisticsResult *= sensitivity;
 
-            var probabilityOfAnomalyLimit = (firstWeightedDispersion * StudentDistribution.GetCriticalValue(firstApproximationCoefficients.Count - 1, _probabilityOfAnomalySignificanceLevel)
-               + secondWeightedDispersion * StudentDistribution.GetCriticalValue(secondApproximationCoefficients.Count - 1, _probabilityOfAnomalySignificanceLevel))
-               / (firstWeightedDispersion + secondWeightedDispersion);
+            var probabilityOfAnomalyLimit = (firstWeightedDispersion * StudentDistributionTable.GetCriticalValue(firstApproximationCoefficients.Count - 1, _probabilityOfAnomalySignificanceLevel)
+                + secondWeightedDispersion * StudentDistributionTable.GetCriticalValue(secondApproximationCoefficients.Count - 1, _probabilityOfAnomalySignificanceLevel))
+                / (firstWeightedDispersion + secondWeightedDispersion);
 
-            var anomalyLimit = (firstWeightedDispersion * StudentDistribution.GetCriticalValue(firstApproximationCoefficients.Count - 1, _anomalySignificanceLevel)
-                + secondWeightedDispersion * StudentDistribution.GetCriticalValue(secondApproximationCoefficients.Count - 1, _anomalySignificanceLevel))
+            var anomalyLimit = (firstWeightedDispersion * StudentDistributionTable.GetCriticalValue(firstApproximationCoefficients.Count - 1, _anomalySignificanceLevel)
+                + secondWeightedDispersion * StudentDistributionTable.GetCriticalValue(secondApproximationCoefficients.Count - 1, _anomalySignificanceLevel))
                 / (firstWeightedDispersion + secondWeightedDispersion);           
 
             var result = new AnomalyDetectionResult() { Source = Name, Type = AnomalyDetectionResultType.Normal, StatisticsValue = statisticsResult, StatisticsLimit = probabilityOfAnomalyLimit };

@@ -3,6 +3,9 @@ using System.Linq;
 
 namespace DiscreteWaveletTransformationAnomalyDetection
 {
+    /// <summary>
+    /// Объект для получения из множества подмножества, определяемого левой (Start) и правой (End) границами.
+    /// </summary>
     class Window
     {
         public int Start { get; set; }

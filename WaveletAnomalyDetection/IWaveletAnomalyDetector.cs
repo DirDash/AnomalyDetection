@@ -2,6 +2,9 @@
 
 namespace WaveletAnomalyDetection
 {
+    /// <summary>
+    /// Детектор аномалий на основе вейвлет-преобразования. Данные для сбора статистики нормы и поиска аномалий указываются в окнах сравнения и обнаружения соответственно. 
+    /// </summary>
     public interface IWaveletAnomalyDetector
     {
         int ComparisonWindowStart { get; set; }

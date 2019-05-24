@@ -9,7 +9,7 @@ namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorith
     {
         public string Name
         {
-            get => "Критерий Фишера (средние значения)";
+            get => "Критерий Фишера (среднее значение)";
         }
 
         private const double _anomalySignificanceLevel = 0.001;
@@ -36,8 +36,8 @@ namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorith
 
             statisticsResult *= sensitivity;
 
-            var probabilityOfAnomalyLimit = FischerDistribution.GetCriticalValue(2 * firstApproximationCoefficients.Count, 2 * secondApproximationCoefficients.Count, _probabilityOfAnomalySignificanceLevel);
-            var anomalyLimit = FischerDistribution.GetCriticalValue(2 * firstApproximationCoefficients.Count, 2 * secondApproximationCoefficients.Count, _anomalySignificanceLevel);
+            var probabilityOfAnomalyLimit = FischerDistributionTable.GetCriticalValue(2 * firstApproximationCoefficients.Count, 2 * secondApproximationCoefficients.Count, _probabilityOfAnomalySignificanceLevel);
+            var anomalyLimit = FischerDistributionTable.GetCriticalValue(2 * firstApproximationCoefficients.Count, 2 * secondApproximationCoefficients.Count, _anomalySignificanceLevel);
 
             var result = new AnomalyDetectionResult() { Source = Name, Type = AnomalyDetectionResultType.Normal, StatisticsValue = statisticsResult, StatisticsLimit = probabilityOfAnomalyLimit };
 

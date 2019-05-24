@@ -6,15 +6,18 @@ using System.Windows.Shapes;
 
 namespace AnomalyDetectionApplication
 {
+    /// <summary>
+    /// Класс для работы с визуализацией, в частности - с отрисовкой точек.
+    /// </summary>
     static class VisualizationHelper
     {
         public static double CalculateCoordinate(double currentMin, double currentMax, double realMin, double realMax, double current)
         {
-            double positionCoefficient = Math.Abs(current - currentMin) / (currentMax - currentMin);
+            var positionCoefficient = Math.Abs(current - currentMin) / (currentMax - currentMin);
             return positionCoefficient * (realMax - realMin) + realMin;
         }
 
-        public static void DrawPoint(Canvas canvas, double x, double y, double radius, Brush color)
+        public static void DrawPoint(Canvas canvas, double x, double y, double radius, Brush color, string tooltip)
         {
             var point = new Point(x, canvas.Height - y);
 
@@ -25,6 +28,11 @@ namespace AnomalyDetectionApplication
             elipse.Height = 2 * radius;
             elipse.Margin = new Thickness(point.X - radius, point.Y - radius, 0, 0);
             elipse.Fill = color;
+
+            if (!string.IsNullOrEmpty(tooltip))
+            {
+                elipse.ToolTip = tooltip;
+            }
 
             canvas.Children.Add(elipse);
         }

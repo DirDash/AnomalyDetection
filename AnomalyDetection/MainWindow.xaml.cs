@@ -22,6 +22,8 @@ namespace AnomalyDetectionApplication
         
         private void HandleDataLoaded()
         {
+            _detectionEngine.ClearResults();
+
             WaveletComboBox.Items.Clear();
             foreach (var wavelet in _detectionEngine.AllWavelets)
             {
@@ -34,6 +36,15 @@ namespace AnomalyDetectionApplication
         
             _detectionEngine.DetectionWindowStart = 3 * (_detectionEngine.Data.Count / 4);
             _detectionEngine.DetectionWindowEnd = _detectionEngine.Data.Count;
+
+            MessageTextBox.Clear();
+
+            FirstCriterionValueLabel.Content = "0";
+            FirstCriterionLimitLabel.Content = "0";
+            SecondCriterionValueLabel.Content = "0";
+            SecondCriterionLimitLabel.Content = "0";
+            ThirdCriterionValueLabel.Content = "0";
+            ThirdCriterionLimitLabel.Content = "0";
 
             WaveletComboBox.IsEnabled = true;
 
@@ -60,7 +71,7 @@ namespace AnomalyDetectionApplication
                 var x = VisualizationHelper.CalculateCoordinate(0, _detectionEngine.Data.Count - 1, elipseRadius, VisualizationCanvas.Width - elipseRadius, i);
                 var y = VisualizationHelper.CalculateCoordinate(_detectionEngine.DataMinValue, _detectionEngine.DataMaxValue, elipseRadius, VisualizationCanvas.Height - elipseRadius, _detectionEngine.Data[i]);
 
-                VisualizationHelper.DrawPoint(VisualizationCanvas, x, y, elipseRadius, Brushes.DarkGray);
+                VisualizationHelper.DrawPoint(VisualizationCanvas, x, y, elipseRadius, Brushes.DarkGray, _detectionEngine.Data[i].ToString());
             }
         }
 
@@ -92,7 +103,7 @@ namespace AnomalyDetectionApplication
             }
             catch (Exception)
             {
-                MessageBox.Show("Ошибка при попытке загрузки файла." + '\n' + "Убедитесь, что файл имеет корректный формат." + '\n' + "Подробнее: https://github.com/DirDash/AnomalyDetection");
+                MessageBox.Show($"Ошибка при попытке загрузки файла.{Environment.NewLine}Убедитесь, что файл имеет корректный формат.{Environment.NewLine}Подробнее: https://github.com/DirDash/AnomalyDetection");
             }
             SetStatus("");
         }
@@ -111,15 +122,15 @@ namespace AnomalyDetectionApplication
                     SetStatus("Сохранение результатов...");
 
                     _detectionEngine.SaveDataToFile(fileDialog.FileName);
+                    
+                    MessageBox.Show("Сохрание успешно завершено");
 
                     SetStatus("");
-
-                    MessageBox.Show("Сохрание завершено успешно");
                 }
             }
             catch (Exception)
             {
-                MessageBox.Show("Ошибка при попытке сохранения файла." + '\n' + "Повторите попытку или перезагрузите приложение.");
+                MessageBox.Show($"Ошибка при попытке сохранения файла.{Environment.NewLine}Повторите попытку или перезагрузите приложение.");
             }
             SetStatus("");
         }
@@ -127,7 +138,16 @@ namespace AnomalyDetectionApplication
         private void DetectAnomalyButton_Click(object sender, RoutedEventArgs e)
         {
             SetStatus("Поиск аномалий...");
-            _detectionEngine.CheckOnAnomaly();
+
+            try
+            {
+                _detectionEngine.CheckOnAnomaly();
+            }
+            catch (Exception)
+            {
+                MessageBox.Show($"Ошибка в процессе поиска аномалий.{Environment.NewLine}Повторите попытку или перезагрузите приложение.");
+            }
+
             UpdateInterface();
             SetStatus("");
         }
@@ -231,15 +251,23 @@ namespace AnomalyDetectionApplication
                         break;
                 }
 
+                var noAnomalyDetetcted = true;
                 MessageTextBox.Clear();
                 foreach (var result in _detectionEngine.AnomalyDetectionResults)
                 {
                     if (result.Type != AnomalyDetectionResultType.Normal)
                     {
-                        MessageTextBox.Text += $"({result.Source}) {result.Message}";
+                        noAnomalyDetetcted = false;
+
+                        MessageTextBox.Text += $"({result.Source}) {result.Message}.";
                         MessageTextBox.Text += Environment.NewLine;
                         MessageTextBox.Text += Environment.NewLine;
                     }
+                }
+
+                if (noAnomalyDetetcted)
+                {
+                    MessageTextBox.Text += "Аномалии не обнаружены.";
                 }
             }
         }

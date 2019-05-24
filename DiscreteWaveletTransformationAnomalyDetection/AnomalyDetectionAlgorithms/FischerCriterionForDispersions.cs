@@ -7,7 +7,7 @@ namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorith
 {
     class FischerCriterionForDispersions : IAnomalyDetectionAlgorithm
     {
-        public string Name => "Критерий Фишера (дисперсии)";
+        public string Name => "Критерий Фишера (дисперсия)";
 
         private const double _anomalySignificanceLevel = 0.001;
         private const double _probabilityOfAnomalySignificanceLevel = 0.05;
@@ -47,8 +47,8 @@ namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorith
 
             statisticsResult *= sensitivity;
 
-            var probabilityOfAnomalyLimit = FischerDistribution.GetCriticalValue(firstDetailingCoefficients.Count - 1, secondDetailingCoefficients.Count - 1, _probabilityOfAnomalySignificanceLevel);
-            var anomalyLimit = FischerDistribution.GetCriticalValue(firstDetailingCoefficients.Count - 1, secondDetailingCoefficients.Count - 1, _anomalySignificanceLevel);
+            var probabilityOfAnomalyLimit = FischerDistributionTable.GetCriticalValue(firstDetailingCoefficients.Count - 1, secondDetailingCoefficients.Count - 1, _probabilityOfAnomalySignificanceLevel);
+            var anomalyLimit = FischerDistributionTable.GetCriticalValue(firstDetailingCoefficients.Count - 1, secondDetailingCoefficients.Count - 1, _anomalySignificanceLevel);
 
             var result = new AnomalyDetectionResult() { Source = Name, Type = AnomalyDetectionResultType.Normal, StatisticsValue = statisticsResult, StatisticsLimit = probabilityOfAnomalyLimit };
 

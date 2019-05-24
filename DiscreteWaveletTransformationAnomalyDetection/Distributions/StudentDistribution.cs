@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace DiscreteWaveletTransformationAnomalyDetection.Distributions
 {
-    static class StudentDistribution
+    static class StudentDistributionTable
     {
         private static Dictionary<double, List<DistributionPair>> _distributionTables = new Dictionary<double, List<DistributionPair>> {
             { 0.05, new List<DistributionPair>() {

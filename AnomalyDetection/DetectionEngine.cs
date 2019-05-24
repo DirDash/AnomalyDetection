@@ -7,6 +7,9 @@ using WaveletAnomalyDetection.Wavelets;
 
 namespace AnomalyDetectionApplication
 {
+    /// <summary>
+    /// Класс-обёртка над детектором аномалий на основе дискретного вейвлет-преобразования с функцией чтения исходных данных и сохранением результатов поиска.
+    /// </summary>
     class DetectionEngine
     {
         private List<double> _data = new List<double>();
@@ -227,6 +230,14 @@ namespace AnomalyDetectionApplication
                 {
                     streamWriter.WriteLine(value);
                 }
+            }
+        }
+
+        public void ClearResults()
+        {
+            if (AnomalyDetectionResults != null)
+            {
+                AnomalyDetectionResults.Clear();
             }
         }
     }

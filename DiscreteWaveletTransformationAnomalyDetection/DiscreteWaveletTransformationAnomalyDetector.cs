@@ -6,6 +6,9 @@ using WaveletAnomalyDetection;
 
 namespace DiscreteWaveletTransformationAnomalyDetection
 {
+    /// <summary>
+    /// Детектор аномалий на основе дискретного вейвлет-преобразования. Используются статистические критерии Фишера и Кохрана-Кокса для средних значений и дисперсий.
+    /// </summary>
     public class DiscreteWaveletTransformationAnomalyDetector : IWaveletAnomalyDetector
     {
         public int ComparisonWindowStart { get; set; }
@@ -14,6 +17,9 @@ namespace DiscreteWaveletTransformationAnomalyDetection
         public int DetectionWindowStart { get; set; }
         public int DetectionWindowEnd { get; set; }
 
+        /// <summary>
+        /// Коэффициент чувствительности статистических критериев. Рекомендуемое значение: 1.0
+        /// </summary>
         public double Sensitivity { get; set; }
 
         public IWavelet Wavelet { get; set; }
@@ -33,13 +39,14 @@ namespace DiscreteWaveletTransformationAnomalyDetection
             var comparisonWindow = new Window(data, ComparisonWindowStart, ComparisonWindowEnd);
             var detectionWindow = new Window(data, DetectionWindowStart, DetectionWindowEnd);
 
+            // На первом шаге аппроксимирующими коэффициентами являются сами данные. Все остальные коэффициенты вычисляются из них.
             _comparisonWindowApproximationCoefficients = comparisonWindow.Points;
             _detectionWindowApproximationCoefficients = detectionWindow.Points;
 
             _anomalyDetectionAlgorithmResults = new Dictionary<string, AnomalyDetectionResult>();
             foreach (var anomalyDetectionAlgorythm in _anomalyDetectionAlgorithms)
             {
-                _anomalyDetectionAlgorithmResults.Add(anomalyDetectionAlgorythm.ToString(), null);
+                _anomalyDetectionAlgorithmResults.Add(anomalyDetectionAlgorythm.Name, null);
             }
 
             RunAnomalyDetectionAlgorithms();
@@ -64,18 +71,24 @@ namespace DiscreteWaveletTransformationAnomalyDetection
 
             foreach (var result in anomalyDetectionResults)
             {
+                // Записываются новые результаты и обновляются старые, если новые содержат информацию об обнаруженной аномалии
                 if (_anomalyDetectionAlgorithmResults[result.Source] == null || result.Type > _anomalyDetectionAlgorithmResults[result.Source].Type)
                 {
                     _anomalyDetectionAlgorithmResults[result.Source] = result;
                 }
             }
 
+            // Если аномалии не обнаружены, но вероятность их наличия очень высока, производится дальнейшее разложение с повторным применением статистических алгоритмов
             if (_anomalyDetectionAlgorithmResults.Values.Any(result => result.Type == AnomalyDetectionResultType.HighProbabilityOfAnomaly))
             {
                 RunAnomalyDetectionAlgorithms();
             }
         }
 
+        /// <summary>
+        /// Разложение: вычисление последующих коэффициентов аппроксимации и дисперсии на основе предыдущих. При каждом разложении количество коэффициентов сокращается вдвое.
+        /// </summary>
+        /// <returns>Возвращает false, если в результате разложения число коэффициентов равно нулю; true - в противном случае.</returns>
         private bool Decompose()
         {
             var newComparisonWindowApproximationCoefficients = Filter(_comparisonWindowApproximationCoefficients, Wavelet.ScalingCoefficients);
@@ -98,6 +111,9 @@ namespace DiscreteWaveletTransformationAnomalyDetection
             return true;
         }
 
+        /// <summary>
+        /// Применение вейвлет-преобразования (филтрации)
+        /// </summary>
         private List<double> Filter(List<double> coefficientsToFilter, double[] filterCoefficients)
         {
             var filteredCoefficients = new List<double>();

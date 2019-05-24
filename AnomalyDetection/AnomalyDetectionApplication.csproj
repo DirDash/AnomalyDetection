@@ -54,6 +54,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="VisualizationHelper.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -62,6 +63,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DetectionEngine.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -98,6 +100,15 @@
       <Project>{06029eef-bfac-4100-90f1-6babe3f76e1e}</Project>
       <Name>DiscreteWaveletTransformationAnomalyDetector</Name>
     </ProjectReference>
+    <ProjectReference Include="..\WaveletAnomalyDetection\WaveletAnomalyDetection.csproj">
+      <Project>{19d694b9-be96-4179-a70c-b4870bef2a48}</Project>
+      <Name>WaveletAnomalyDetection</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\anomaly_detection_icon.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

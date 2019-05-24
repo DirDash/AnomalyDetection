@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using WaveletAnomalyDetection;
 
 namespace DiscreteWaveletTransformationAnomalyDetection
 {
@@ -6,6 +7,6 @@ namespace DiscreteWaveletTransformationAnomalyDetection
     {
         string Name { get; }
 
-        AnomalyDetectionResult CheckOnAnomaly(List<double> firstApproximationCoefficients,List<double> firstDetailingCoefficients, List<double> secondApproximationCoefficients, List<double> secondDetailingCoefficients);
+        AnomalyDetectionResult CheckOnAnomaly(List<double> firstApproximationCoefficients, List<double> firstDetailingCoefficients, List<double> secondApproximationCoefficients, List<double> secondDetailingCoefficients, double sensitivity);
     }
 }

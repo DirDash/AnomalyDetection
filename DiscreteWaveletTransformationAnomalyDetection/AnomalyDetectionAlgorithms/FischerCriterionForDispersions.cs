@@ -1,24 +1,19 @@
 ﻿using DiscreteWaveletTransformationAnomalyDetection.Distributions;
 using System;
 using System.Collections.Generic;
+using WaveletAnomalyDetection;
 
 namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorithms
 {
     class FischerCriterionForDispersions : IAnomalyDetectionAlgorithm
     {
-        public string Name
-        {
-            get
-            {
-                return "Fischer criterion for dispersions";
-            }
-        }
+        public string Name => "Критерий Фишера (дисперсии)";
 
         private const double _anomalySignificanceLevel = 0.001;
         private const double _probabilityOfAnomalySignificanceLevel = 0.05;
 
         public AnomalyDetectionResult CheckOnAnomaly(List<double> firstApproximationCoefficients, List<double> firstDetailingCoefficients,
-            List<double> secondApproximationCoefficients, List<double> secondDetailingCoefficients)
+            List<double> secondApproximationCoefficients, List<double> secondDetailingCoefficients, double sensitivity)
         {
             var firstDetailingApproximatedCoefficient = 0.0;
             foreach (var coefficient in firstDetailingCoefficients)
@@ -50,21 +45,29 @@ namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorith
 
             var statisticsResult = secondDispersion / firstDispersion;
 
-            var result = new AnomalyDetectionResult();
+            statisticsResult *= sensitivity;
 
-            if (statisticsResult > FischerDistribution.GetCriticalValue(firstDetailingCoefficients.Count - 1, secondDetailingCoefficients.Count - 1, _anomalySignificanceLevel))
+            var probabilityOfAnomalyLimit = FischerDistribution.GetCriticalValue(firstDetailingCoefficients.Count - 1, secondDetailingCoefficients.Count - 1, _probabilityOfAnomalySignificanceLevel);
+            var anomalyLimit = FischerDistribution.GetCriticalValue(firstDetailingCoefficients.Count - 1, secondDetailingCoefficients.Count - 1, _anomalySignificanceLevel);
+
+            var result = new AnomalyDetectionResult() { Source = Name, Type = AnomalyDetectionResultType.Normal, StatisticsValue = statisticsResult, StatisticsLimit = probabilityOfAnomalyLimit };
+
+            if (statisticsResult > probabilityOfAnomalyLimit)
             {
-                result.AnomalyProbabilityIsHigh = true;
-                result.Message = "Обнаружена высокая вероятность наличия краткосрочной высокочастотной аномалии.";
+                result.Type = AnomalyDetectionResultType.HighProbabilityOfAnomaly;
+                result.Message = "Обнаружена высокая вероятность наличия кратковременной высокочастотной аномалии.";
             }
 
-            if (statisticsResult > FischerDistribution.GetCriticalValue(firstDetailingCoefficients.Count - 1, secondDetailingCoefficients.Count - 1, _probabilityOfAnomalySignificanceLevel))
+            if (statisticsResult > anomalyLimit)
             {
-                result.AnomalyIsDetected = true;
-                result.Message = "Обнаружена краткосрочная высокочастотная аномалия.";
+                result.Type = AnomalyDetectionResultType.Anomaly;
+                result.StatisticsLimit = anomalyLimit;
+                result.Message = "Обнаружена кратковременная высокочастотная аномалия.";
             }
 
             return result;
         }
+
+        public override string ToString() => "Критерий Фишера (дисперсии)";
     }
 }

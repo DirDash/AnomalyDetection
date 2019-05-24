@@ -5,8 +5,8 @@ namespace DiscreteWaveletTransformationAnomalyDetection
 {
     class Window
     {
-        public int LeftLimit { get; set; }
-        public int RightLimit { get; set; }
+        public int Start { get; set; }
+        public int End { get; set; }
 
         public List<double> Points
         {
@@ -14,7 +14,7 @@ namespace DiscreteWaveletTransformationAnomalyDetection
             {
                 var pointsInWindow = new List<double>();
 
-                for (int i = LeftLimit; i < RightLimit; i++)
+                for (int i = Start; i < End; i++)
                 {
                     pointsInWindow.Add(_allPoints[i]);
                 }
@@ -25,11 +25,11 @@ namespace DiscreteWaveletTransformationAnomalyDetection
 
         private double[] _allPoints;
 
-        public Window(IEnumerable<double> allPoints, int leftLimit, int rightLimit)
+        public Window(IEnumerable<double> allPoints, int start, int end)
         {
             _allPoints = allPoints.ToArray();
-            LeftLimit = leftLimit;
-            RightLimit = rightLimit;
+            Start = start;
+            End = end;
         }
     }
 }

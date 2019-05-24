@@ -1,6 +1,7 @@
 ﻿using DiscreteWaveletTransformationAnomalyDetection.Distributions;
 using System;
 using System.Collections.Generic;
+using WaveletAnomalyDetection;
 
 namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorithms
 {
@@ -8,17 +9,14 @@ namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorith
     {
         public string Name
         {
-            get
-            {
-                return "Cochrane-Cox criterion for approximations";
-            }
+            get => "Критерий Кохрана-Кокса (средние значения)";
         }
 
         private const double _anomalySignificanceLevel = 0.001;
         private const double _probabilityOfAnomalySignificanceLevel = 0.05;
 
         public AnomalyDetectionResult CheckOnAnomaly(List<double> firstApproximationCoefficients, List<double> firstDetailingCoefficients,
-            List<double> secondApproximationCoefficients, List<double> secondDetailingCoefficients)
+            List<double> secondApproximationCoefficients, List<double> secondDetailingCoefficients, double sensitivity)
         {
             var firstApproximationApproximatedCoefficient = 0.0;
             foreach (var coefficient in firstApproximationCoefficients)
@@ -54,29 +52,35 @@ namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorith
 
             var statisticsResult = (Math.Abs(secondApproximationApproximatedCoefficient - firstApproximationApproximatedCoefficient)) / summaryDispersion;
 
-            var anomalyLimit = (firstWeightedDispersion * StudentDistribution.GetCriticalValue(firstApproximationCoefficients.Count - 1, _anomalySignificanceLevel)
-                + secondWeightedDispersion * StudentDistribution.GetCriticalValue(secondApproximationCoefficients.Count - 1, _anomalySignificanceLevel))
-                / (firstWeightedDispersion + secondWeightedDispersion);
+            statisticsResult *= sensitivity;
 
             var probabilityOfAnomalyLimit = (firstWeightedDispersion * StudentDistribution.GetCriticalValue(firstApproximationCoefficients.Count - 1, _probabilityOfAnomalySignificanceLevel)
-                + secondWeightedDispersion * StudentDistribution.GetCriticalValue(secondApproximationCoefficients.Count - 1, _probabilityOfAnomalySignificanceLevel))
-                / (firstWeightedDispersion + secondWeightedDispersion);
+               + secondWeightedDispersion * StudentDistribution.GetCriticalValue(secondApproximationCoefficients.Count - 1, _probabilityOfAnomalySignificanceLevel))
+               / (firstWeightedDispersion + secondWeightedDispersion);
 
-            var result = new AnomalyDetectionResult();
+            var anomalyLimit = (firstWeightedDispersion * StudentDistribution.GetCriticalValue(firstApproximationCoefficients.Count - 1, _anomalySignificanceLevel)
+                + secondWeightedDispersion * StudentDistribution.GetCriticalValue(secondApproximationCoefficients.Count - 1, _anomalySignificanceLevel))
+                / (firstWeightedDispersion + secondWeightedDispersion);           
+
+            var result = new AnomalyDetectionResult() { Source = Name, Type = AnomalyDetectionResultType.Normal, StatisticsValue = statisticsResult, StatisticsLimit = probabilityOfAnomalyLimit };
 
             if (statisticsResult > probabilityOfAnomalyLimit)
             {
-                result.AnomalyProbabilityIsHigh = true;
+                result.Type = AnomalyDetectionResultType.HighProbabilityOfAnomaly;
+                result.StatisticsLimit = probabilityOfAnomalyLimit;
                 result.Message = "Обнаружена высокая вероятность наличия долговременной низкочастотной аномалии.";
             }
 
             if (statisticsResult > anomalyLimit)
             {
-                result.AnomalyIsDetected = true;
+                result.Type = AnomalyDetectionResultType.Anomaly;
+                result.StatisticsLimit = anomalyLimit;
                 result.Message = "Обнаружена долговременная низкочастотная аномалия.";
             }
 
             return result;
         }
+
+        public override string ToString() => Name;
     }
 }

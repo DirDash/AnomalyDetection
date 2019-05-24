@@ -1,66 +1,349 @@
-﻿using DiscreteWaveletTransformationAnomalyDetection;
-
+﻿using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Windows.Threading;
+using WaveletAnomalyDetection;
 
 namespace AnomalyDetectionApplication
 {
-    /// <summary>
-    /// Логика взаимодействия для MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
+        private DetectionEngine _detectionEngine = new DetectionEngine();
+
+        private string _filename;
+        
         public MainWindow()
         {
             InitializeComponent();
         }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
+        
+        private void HandleDataLoaded()
         {
-            var points = new List<double>();
-            var fileName = "sample_500_25_5_3,5.txt";
-
-            using (var streamReader = new StreamReader(fileName))
+            WaveletComboBox.Items.Clear();
+            foreach (var wavelet in _detectionEngine.AllWavelets)
             {
-                var line = "";
-                while ((line = streamReader.ReadLine()) != null)
+                WaveletComboBox.Items.Add(wavelet);
+            }
+            WaveletComboBox.SelectedIndex = 1;
+
+            _detectionEngine.ComparisonWindowStart = 0;
+            _detectionEngine.ComparisonWindowEnd = _detectionEngine.Data.Count;
+        
+            _detectionEngine.DetectionWindowStart = 3 * (_detectionEngine.Data.Count / 4);
+            _detectionEngine.DetectionWindowEnd = _detectionEngine.Data.Count;
+
+            WaveletComboBox.IsEnabled = true;
+
+            SensivityTextBox.IsEnabled = true;
+
+            ComparisonWindowStartTextBox.IsEnabled = true;
+            ComparisonWindowEndTextBox.IsEnabled = true;
+
+            DetectionWindowStartTextBox.IsEnabled = true;
+            DetectionWindowEndTextBox.IsEnabled = true;
+
+            DetectAnomalyButton.IsEnabled = true;
+            SaveToFileButton.IsEnabled = false;
+        }
+
+        private void VisualizeData()
+        {
+            var elipseRadius = VisualizationHelper.CalculateElipseRadius(_detectionEngine.Data.Count);
+
+            VisualizationCanvas.Children.Clear();
+
+            for (var i = 0; i < _detectionEngine.Data.Count; i++)
+            {
+                var x = VisualizationHelper.CalculateCoordinate(0, _detectionEngine.Data.Count - 1, elipseRadius, VisualizationCanvas.Width - elipseRadius, i);
+                var y = VisualizationHelper.CalculateCoordinate(_detectionEngine.DataMinValue, _detectionEngine.DataMaxValue, elipseRadius, VisualizationCanvas.Height - elipseRadius, _detectionEngine.Data[i]);
+
+                VisualizationHelper.DrawPoint(VisualizationCanvas, x, y, elipseRadius, Brushes.DarkGray);
+            }
+        }
+
+        private void LoadFromFileButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var fileDialog = new OpenFileDialog();
+                fileDialog.DefaultExt = ".txt";
+                fileDialog.Filter = "Text documents (.txt)|*.txt";
+                
+                if (fileDialog.ShowDialog() == true)
                 {
-                    points.Add(double.Parse(line));
+                    SetStatus("Загрузка данных...");
+                    _filename = Path.GetFileName(fileDialog.FileName);
+
+                    _detectionEngine.LoadDataFromFile(fileDialog.FileName);
+
+                    HandleDataLoaded();
+
+                    UpdateInterface();
+
+                    SetStatus("Визуализация...");
+
+                    VisualizeData();
+
+                    SetStatus("");
                 }
             }
-
-            var detector = new DiscreteWaveletTransformationAnomalyDetector();
-            detector.ComparisonWindowLeftLimit = 0;
-            detector.ComparisonWindowRightLimit = 400;
-            detector.DetectionWindowLeftLimit = 400;
-            detector.DetectionWindowRightLimit = 500;
-
-            var results = detector.CheckOnAnomaly(points).ToList();
-
-            if (results.Count > 0)
+            catch (Exception)
             {
-                foreach (var result in results)
+                MessageBox.Show("Ошибка при попытке загрузки файла." + '\n' + "Убедитесь, что файл имеет корректный формат." + '\n' + "Подробнее: https://github.com/DirDash/AnomalyDetection");
+            }
+            SetStatus("");
+        }
+
+        private void SaveToFileButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var fileDialog = new SaveFileDialog();
+                fileDialog.DefaultExt = ".txt";
+                fileDialog.Filter = "Text documents (.txt)|*.txt";
+                fileDialog.FileName = $"{Path.GetFileNameWithoutExtension(_filename)}_anomaly_detection_results.txt";
+                
+                if (fileDialog.ShowDialog() == true)
                 {
-                    OutputLabel.Content = result.Message;
+                    SetStatus("Сохранение результатов...");
+
+                    _detectionEngine.SaveDataToFile(fileDialog.FileName);
+
+                    SetStatus("");
+
+                    MessageBox.Show("Сохрание завершено успешно");
                 }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Ошибка при попытке сохранения файла." + '\n' + "Повторите попытку или перезагрузите приложение.");
+            }
+            SetStatus("");
+        }
+
+        private void DetectAnomalyButton_Click(object sender, RoutedEventArgs e)
+        {
+            SetStatus("Поиск аномалий...");
+            _detectionEngine.CheckOnAnomaly();
+            UpdateInterface();
+            SetStatus("");
+        }
+
+        private void ExitButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void UpdateInterface()
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
+            MaxTimeLabel.Content = _detectionEngine.Data.Count;
+            MinValueLabel.Content = _detectionEngine.DataMinValue;
+            MaxValueLabel.Content = _detectionEngine.DataMaxValue;
+
+            ComparisonWindowStartTextBox.Text = _detectionEngine.ComparisonWindowStart.ToString();
+            ComparisonWindowEndTextBox.Text = _detectionEngine.ComparisonWindowEnd.ToString();
+
+            DetectionWindowStartTextBox.Text = _detectionEngine.DetectionWindowStart.ToString();
+            DetectionWindowEndTextBox.Text = _detectionEngine.DetectionWindowEnd.ToString();
+
+            if (string.IsNullOrEmpty(_filename))
+            {
+                FilenameLabel.Content = "файл не выбран";
             }
             else
             {
-                OutputLabel.Content = "аномалии не обнаружены.";
+                FilenameLabel.Content = _filename;
+            }
+
+            if (_detectionEngine.AnomalyDetectionResults != null && _detectionEngine.AnomalyDetectionResults.Count > 0)
+            {
+                SaveToFileButton.IsEnabled = true;
+            }
+
+            if (_detectionEngine.Data != null && _detectionEngine.Data.Count > 0)
+            {
+                var comparisonWindowStart = VisualizationHelper.CalculateCoordinate(0, _detectionEngine.Data.Count, 0, VisualizationCanvas.Width, _detectionEngine.ComparisonWindowStart);
+                var comparisonWindowEnd = VisualizationHelper.CalculateCoordinate(0, _detectionEngine.Data.Count, 0, VisualizationCanvas.Width, _detectionEngine.ComparisonWindowEnd);
+                ComparisonWindowGrid.Margin = new Thickness(comparisonWindowStart, 0, 0, 0);
+                ComparisonWindowGrid.Width = comparisonWindowEnd - comparisonWindowStart;
+
+                var detectionWindowStart = VisualizationHelper.CalculateCoordinate(0, _detectionEngine.Data.Count, 0, VisualizationCanvas.Width, _detectionEngine.DetectionWindowStart);
+                var detectionWindowEnd = VisualizationHelper.CalculateCoordinate(0, _detectionEngine.Data.Count, 0, VisualizationCanvas.Width, _detectionEngine.DetectionWindowEnd);
+                DetectionWindowGrid.Margin = new Thickness(detectionWindowStart, 0, 0, 0);
+                DetectionWindowGrid.Width = detectionWindowEnd - detectionWindowStart;
+            }
+
+            if (_detectionEngine.AnomalyDetectionResults != null && _detectionEngine.AnomalyDetectionResults.Count > 0)
+            {
+                FirstCriterionLabel.Content = _detectionEngine.AnomalyDetectionResults[0].Source;
+                FirstCriterionValueLabel.Content = _detectionEngine.AnomalyDetectionResults[0].StatisticsValue;
+                FirstCriterionLimitLabel.Content = _detectionEngine.AnomalyDetectionResults[0].StatisticsLimit;
+                switch (_detectionEngine.AnomalyDetectionResults[0].Type)
+                {
+                    case AnomalyDetectionResultType.Anomaly:
+                        FirstCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(239, 154, 154));
+                        break;
+                    case AnomalyDetectionResultType.HighProbabilityOfAnomaly:
+                        FirstCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(255, 204, 128));
+                        break;
+                    default:
+                        FirstCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(232, 232, 232));
+                        break;
+                }
+
+                SecondCriterionLabel.Content = _detectionEngine.AnomalyDetectionResults[1].Source;
+                SecondCriterionValueLabel.Content = _detectionEngine.AnomalyDetectionResults[1].StatisticsValue;
+                SecondCriterionLimitLabel.Content = _detectionEngine.AnomalyDetectionResults[1].StatisticsLimit;
+                switch (_detectionEngine.AnomalyDetectionResults[1].Type)
+                {
+                    case AnomalyDetectionResultType.Anomaly:
+                        SecondCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(239, 154, 154));
+                        break;
+                    case AnomalyDetectionResultType.HighProbabilityOfAnomaly:
+                        SecondCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(255, 204, 128));
+                        break;
+                    default:
+                        SecondCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(232, 232, 232));
+                        break;
+                }
+
+                ThirdCriterionLabel.Content = _detectionEngine.AnomalyDetectionResults[2].Source;
+                ThirdCriterionValueLabel.Content = _detectionEngine.AnomalyDetectionResults[2].StatisticsValue;
+                ThirdCriterionLimitLabel.Content = _detectionEngine.AnomalyDetectionResults[2].StatisticsLimit;
+                switch (_detectionEngine.AnomalyDetectionResults[2].Type)
+                {
+                    case AnomalyDetectionResultType.Anomaly:
+                        ThirdCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(239, 154, 154));
+                        break;
+                    case AnomalyDetectionResultType.HighProbabilityOfAnomaly:
+                        ThirdCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(255, 204, 128));
+                        break;
+                    default:
+                        ThirdCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(232, 232, 232));
+                        break;
+                }
+
+                MessageTextBox.Clear();
+                foreach (var result in _detectionEngine.AnomalyDetectionResults)
+                {
+                    if (result.Type != AnomalyDetectionResultType.Normal)
+                    {
+                        MessageTextBox.Text += $"({result.Source}) {result.Message}";
+                        MessageTextBox.Text += Environment.NewLine;
+                        MessageTextBox.Text += Environment.NewLine;
+                    }
+                }
             }
         }
+
+        private void SetStatus(string status)
+        {
+            if (string.IsNullOrEmpty(status))
+            {
+                StatusLbl.Content = "";
+                StatusLbl.Visibility = Visibility.Hidden;
+            }
+            else
+            {
+                StatusLbl.Content = status.ToUpper();
+                StatusLbl.Visibility = Visibility.Visible;
+                AllowInterfaceToUpdate();
+            }
+        }
+
+        private void AllowInterfaceToUpdate()
+        {
+            var frame = new DispatcherFrame();
+            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Render, new DispatcherOperationCallback(delegate (object parameter)
+            {
+                frame.Continue = false;
+                return null;
+            }), null);
+
+            Dispatcher.PushFrame(frame);
+            Application.Current.Dispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { }));
+        }
+
+        private void WaveletComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _detectionEngine.ChosenWavelet = (IWavelet)WaveletComboBox.SelectedItem;
+        }
+
+        private void SensivityTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (double.TryParse(SensivityTextBox.Text, out var value))
+            {
+                if (value < _detectionEngine.MinSensivity)
+                {
+                    value = _detectionEngine.MinSensivity;
+                    SensivityTextBox.Text = value.ToString();
+                }
+                _detectionEngine.Sensivity = value;
+            }
+        }
+
+        private void ComparisonWindowStartTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (int.TryParse(ComparisonWindowStartTextBox.Text, out int content))
+            {
+                _detectionEngine.ComparisonWindowStart = content;
+            }
+            else
+            {
+                ComparisonWindowStartTextBox.Text = content.ToString();
+            }
+
+            UpdateInterface();
+        }
+
+        private void ComparisonWindowEndTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (int.TryParse(ComparisonWindowEndTextBox.Text, out int content))
+            {
+                _detectionEngine.ComparisonWindowEnd = content;
+            }
+            else
+            {
+                ComparisonWindowEndTextBox.Text = content.ToString();
+            }
+
+            UpdateInterface();
+        }
+
+        private void DetectionWindowStartTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (int.TryParse(DetectionWindowStartTextBox.Text, out int content))
+            {
+                _detectionEngine.DetectionWindowStart = content;
+            }
+            else
+            {
+                DetectionWindowStartTextBox.Text = content.ToString();
+            }
+
+            UpdateInterface();
+        }
+
+        private void DetectionWindowEndTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (int.TryParse(DetectionWindowEndTextBox.Text, out int content))
+            {
+                _detectionEngine.DetectionWindowEnd= content;
+            }
+            else
+            {
+                DetectionWindowEndTextBox.Text = content.ToString();
+            }
+
+            UpdateInterface();
+        }        
     }
-}
+} 

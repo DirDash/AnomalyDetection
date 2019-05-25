@@ -47,8 +47,8 @@ namespace DiscreteWaveletTransformationAnomalyDetection.Distributions
                 new DistributionPair() {FreedomDegree = 1920, Value = 1.65},
                 new DistributionPair() {FreedomDegree = 3840, Value = 1.35},
                 new DistributionPair() {FreedomDegree = 7680, Value = 1.05},
-                new DistributionPair() {FreedomDegree = 15360, Value = 0.4},
-                new DistributionPair() {FreedomDegree = 30720, Value = 0.05},
+                new DistributionPair() {FreedomDegree = 15360, Value = 0.7},
+                new DistributionPair() {FreedomDegree = 30720, Value = 0.5},
                 new DistributionPair() {FreedomDegree = int.MaxValue, Value = 0.025},
             }},
 
@@ -91,10 +91,10 @@ namespace DiscreteWaveletTransformationAnomalyDetection.Distributions
                 new DistributionPair() {FreedomDegree = 480, Value = 3.05},
                 new DistributionPair() {FreedomDegree = 960, Value = 2.81},
                 new DistributionPair() {FreedomDegree = 1920, Value = 2.3},
-                new DistributionPair() {FreedomDegree = 3840, Value = 1.35},
-                new DistributionPair() {FreedomDegree = 7680, Value = 0.5},
-                new DistributionPair() {FreedomDegree = 15360, Value = 0.01},
-                new DistributionPair() {FreedomDegree = 30720, Value = 0.005},
+                new DistributionPair() {FreedomDegree = 3840, Value = 1.85},
+                new DistributionPair() {FreedomDegree = 7680, Value = 1.55},
+                new DistributionPair() {FreedomDegree = 15360, Value = 1.1},
+                new DistributionPair() {FreedomDegree = 30720, Value = 0.9},
                 new DistributionPair() {FreedomDegree = int.MaxValue, Value = 0.0005},
             }}
         };

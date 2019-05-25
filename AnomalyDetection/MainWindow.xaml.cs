@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -45,6 +46,10 @@ namespace AnomalyDetectionApplication
             SecondCriterionLimitLabel.Content = "0";
             ThirdCriterionValueLabel.Content = "0";
             ThirdCriterionLimitLabel.Content = "0";
+
+            FirstCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(232, 232, 232));
+            SecondCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(232, 232, 232));
+            ThirdCriterionGrid.Background = new SolidColorBrush(Color.FromRgb(232, 232, 232));
 
             WaveletComboBox.IsEnabled = true;
 
@@ -253,13 +258,21 @@ namespace AnomalyDetectionApplication
 
                 var noAnomalyDetetcted = true;
                 MessageTextBox.Clear();
+
+                foreach (var warning in _detectionEngine.Warnings)
+                {
+                    MessageTextBox.Text += warning;
+                    MessageTextBox.Text += Environment.NewLine;
+                    MessageTextBox.Text += Environment.NewLine;
+                }
+
                 foreach (var result in _detectionEngine.AnomalyDetectionResults)
                 {
                     if (result.Type != AnomalyDetectionResultType.Normal)
                     {
                         noAnomalyDetetcted = false;
 
-                        MessageTextBox.Text += $"({result.Source}) {result.Message}.";
+                        MessageTextBox.Text += $"{result.Source}: {result.Message}";
                         MessageTextBox.Text += Environment.NewLine;
                         MessageTextBox.Text += Environment.NewLine;
                     }
@@ -364,7 +377,7 @@ namespace AnomalyDetectionApplication
         {
             if (int.TryParse(DetectionWindowEndTextBox.Text, out int content))
             {
-                _detectionEngine.DetectionWindowEnd= content;
+                _detectionEngine.DetectionWindowEnd = content;
             }
             else
             {
@@ -372,6 +385,74 @@ namespace AnomalyDetectionApplication
             }
 
             UpdateInterface();
-        }        
+        }
+        
+        private void ComprarisonWindowLeftEdge_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                var offset = ComprarisonWindowLeftEdge.Width / 2 - Mouse.GetPosition(ComprarisonWindowLeftEdge).X;
+                var newPosition = ComparisonWindowGrid.Margin.Left - offset;
+                if (newPosition < 0)
+                {
+                    newPosition = 0;
+                }
+                
+                _detectionEngine.ComparisonWindowStart = (int)Math.Floor(VisualizationHelper.CalculateCoordinate(0, VisualizationCanvas.Width, 0, _detectionEngine.Data.Count, newPosition));
+
+                UpdateInterface();                
+            }
+        }
+
+        private void ComprarisonWindowRightEdge_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                var offset = ComprarisonWindowRightEdge.Width / 2 - Mouse.GetPosition(ComprarisonWindowLeftEdge).X;
+                var newPosition = ComparisonWindowGrid.Margin.Left + ComprarisonWindowRightEdge.Width - offset;
+                if (newPosition < 0)
+                {
+                    newPosition = 0;
+                }
+                
+                _detectionEngine.ComparisonWindowEnd = (int)Math.Ceiling(VisualizationHelper.CalculateCoordinate(0, VisualizationCanvas.Width, 0, _detectionEngine.Data.Count, newPosition));
+
+                UpdateInterface();
+            }
+        }
+
+        private void DetectionWindowLeftEdge_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                var offset = DetectionWindowLeftEdge.Width / 2 - Mouse.GetPosition(DetectionWindowLeftEdge).X;
+                var newPosition = DetectionWindowGrid.Margin.Left - offset;
+                if (newPosition < 0)
+                {
+                    newPosition = 0;
+                }
+
+                _detectionEngine.DetectionWindowStart = (int)Math.Floor(VisualizationHelper.CalculateCoordinate(0, VisualizationCanvas.Width, 0, _detectionEngine.Data.Count, newPosition));
+
+                UpdateInterface();
+            }
+        }
+
+        private void DetectionWindowRightEdge_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                var offset = DetectionWindowRightEdge.Width / 2 - Mouse.GetPosition(DetectionWindowLeftEdge).X;
+                var newPosition = DetectionWindowGrid.Margin.Left + DetectionWindowRightEdge.Width + - offset;
+                if (newPosition < 0)
+                {
+                    newPosition = 0;
+                }
+
+                _detectionEngine.DetectionWindowEnd = (int)Math.Ceiling(VisualizationHelper.CalculateCoordinate(0, VisualizationCanvas.Width, 0, _detectionEngine.Data.Count, newPosition));
+
+                UpdateInterface();
+            }
+        }
     }
 } 

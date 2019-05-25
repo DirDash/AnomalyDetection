@@ -50,7 +50,7 @@ namespace DiscreteWaveletTransformationAnomalyDetection.AnomalyDetectionAlgorith
             var secondWeightedDispersion = secondDispersion / secondApproximationCoefficients.Count;
             var summaryDispersion = firstWeightedDispersion + secondWeightedDispersion;
 
-            var statisticsResult = (Math.Abs(secondApproximationApproximatedCoefficient - firstApproximationApproximatedCoefficient)) / summaryDispersion;
+            var statisticsResult = (Math.Abs(secondApproximationApproximatedCoefficient - firstApproximationApproximatedCoefficient)) / Math.Sqrt(summaryDispersion);
 
             statisticsResult *= sensitivity;
 

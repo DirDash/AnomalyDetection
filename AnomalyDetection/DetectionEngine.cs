@@ -57,16 +57,21 @@ namespace AnomalyDetectionApplication
                     newValue = 0;
                 }
 
-                if (newValue > Data.Count - _windowGasp - 1)
+                if (newValue > Data.Count - _windowGap - 1)
                 {
-                    newValue = Data.Count - _windowGasp - 1;
+                    newValue = Data.Count - _windowGap - 1;
                 }
 
                 _anomalyDetector.ComparisonWindowStart = newValue;
 
-                if (_anomalyDetector.ComparisonWindowStart >= _anomalyDetector.ComparisonWindowEnd)
+                if (ComparisonWindowStart >= ComparisonWindowEnd - _windowGap)
                 {
-                    _anomalyDetector.ComparisonWindowEnd = _anomalyDetector.ComparisonWindowStart + _windowGasp;
+                    var newEnd = ComparisonWindowStart + _windowGap;
+                    if (newEnd > Data.Count)
+                    {
+                        newEnd = Data.Count;
+                    }
+                    _anomalyDetector.ComparisonWindowEnd = newEnd;
                 }
             }
         }
@@ -79,9 +84,9 @@ namespace AnomalyDetectionApplication
             {
                 var newValue = value;
 
-                if (newValue < _windowGasp)
+                if (newValue < _windowGap)
                 {
-                    newValue = _windowGasp;
+                    newValue = _windowGap;
                 }
 
                 if (newValue > Data.Count)
@@ -91,9 +96,14 @@ namespace AnomalyDetectionApplication
 
                 _anomalyDetector.ComparisonWindowEnd = newValue;
 
-                if (_anomalyDetector.ComparisonWindowEnd <= _anomalyDetector.ComparisonWindowStart)
+                if (ComparisonWindowStart >= ComparisonWindowEnd - _windowGap)
                 {
-                    _anomalyDetector.ComparisonWindowStart = _anomalyDetector.ComparisonWindowEnd - _windowGasp;
+                    var newStart = ComparisonWindowEnd - _windowGap;
+                    if (newStart < 0)
+                    {
+                        newStart = 0;
+                    }
+                    _anomalyDetector.ComparisonWindowStart = newStart;
                 }
             }
         }
@@ -111,16 +121,21 @@ namespace AnomalyDetectionApplication
                     newValue = 0;
                 }
 
-                if (newValue > Data.Count - _windowGasp - 1)
+                if (newValue > Data.Count - _windowGap - 1)
                 {
-                    newValue = Data.Count - _windowGasp - 1;
+                    newValue = Data.Count - _windowGap - 1;
                 }
 
                 _anomalyDetector.DetectionWindowStart = newValue;
 
-                if (_anomalyDetector.DetectionWindowStart >= _anomalyDetector.DetectionWindowEnd)
+                if (DetectionWindowStart >= DetectionWindowEnd - _windowGap)
                 {
-                    _anomalyDetector.DetectionWindowEnd = _anomalyDetector.DetectionWindowStart + _windowGasp;
+                    var newEnd = DetectionWindowStart + _windowGap;
+                    if (newEnd > Data.Count)
+                    {
+                        newEnd = Data.Count;
+                    }
+                    _anomalyDetector.DetectionWindowEnd = newEnd;
                 }
             }
         }
@@ -133,9 +148,9 @@ namespace AnomalyDetectionApplication
             {
                 var newValue = value;
 
-                if (newValue < _windowGasp)
+                if (newValue < _windowGap)
                 {
-                    newValue = _windowGasp;
+                    newValue = _windowGap;
                 }
 
                 if (newValue > Data.Count)
@@ -145,9 +160,14 @@ namespace AnomalyDetectionApplication
 
                 _anomalyDetector.DetectionWindowEnd = newValue;
 
-                if (_anomalyDetector.DetectionWindowEnd <= _anomalyDetector.DetectionWindowStart)
+                if (DetectionWindowStart >= DetectionWindowEnd - _windowGap)
                 {
-                    _anomalyDetector.DetectionWindowStart = _anomalyDetector.DetectionWindowEnd - _windowGasp;
+                    var newStart = DetectionWindowEnd - _windowGap;
+                    if (newStart < 0)
+                    {
+                        newStart = 0;
+                    }
+                    _anomalyDetector.DetectionWindowStart = newStart;
                 }
             }
         }
@@ -180,14 +200,20 @@ namespace AnomalyDetectionApplication
 
         public List<AnomalyDetectionResult> AnomalyDetectionResults { get; private set; }
 
-        private IWaveletAnomalyDetector _anomalyDetector = new DiscreteWaveletTransformationAnomalyDetector();
-
-        private const int _windowGasp = 1;
+        public List<string> Warnings { get; private set; }
 
         public double MinSensivity
         {
             get => 0.01;
         }
+
+        private IWaveletAnomalyDetector _anomalyDetector = new DiscreteWaveletTransformationAnomalyDetector();
+
+        private const int _windowGap = 50;
+
+        private const int _recomendedMinSize = 100;
+
+        private const int _recomendedWindowDifference = 4;
 
         public void LoadDataFromFile(string filePath)
         {
@@ -205,6 +231,8 @@ namespace AnomalyDetectionApplication
 
         public void CheckOnAnomaly()
         {
+            CheckParameters();
+
             AnomalyDetectionResults = _anomalyDetector.CheckOnAnomaly(Data).ToList();
         }
 
@@ -238,6 +266,33 @@ namespace AnomalyDetectionApplication
             if (AnomalyDetectionResults != null)
             {
                 AnomalyDetectionResults.Clear();
+            }
+            if (Warnings != null)
+            {
+                Warnings.Clear();
+            }
+        }
+
+        private void CheckParameters()
+        {
+            Warnings = new List<string>();
+
+            var comparisonWindowSize = ComparisonWindowEnd - ComparisonWindowStart;
+            var detectionWindowSize = DetectionWindowEnd - DetectionWindowStart;
+
+            if (comparisonWindowSize < _recomendedMinSize)
+            {
+                Warnings.Add($"ПРЕДУПРЕЖДЕНИЕ: Размер окна сравнения меньше рекомендуемого ({_recomendedMinSize}): результат поиска может не соответствовать действительности.");
+            }
+
+            if (detectionWindowSize < _recomendedMinSize)
+            {
+                Warnings.Add($"ПРЕДУПРЕЖДЕНИЕ: Размер окна обнаружения меньше рекомендуемого ({_recomendedMinSize}): результат поиска может не соответствовать действительности.");
+            }
+
+            if (detectionWindowSize * _recomendedWindowDifference > comparisonWindowSize)
+            {
+                Warnings.Add($"ПРЕДУПРЕЖДЕНИЕ: Размер окна обнаружения слишком велик по отношению к размеру окна сравнения: результат поиска может не соответствовать действительности.");
             }
         }
     }
